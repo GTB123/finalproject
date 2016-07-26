@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>Contacts App</title>
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+		<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.5.6/angular.min.js"></script>
+		<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/1.3.3/ui-bootstrap.min.js"></script>
+		<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/1.3.3/ui-bootstrap-tpls.min.js"></script>
+		<script type="text/javascript">
+			var app = angular.module('crud', ['ui.bootstrap']);
+
+
+
+			app.controller('contactList', function($scope,$http,$uibModal) {
+
+				$scope.sortProps = [				// Sort properties that we allow the user to sort by
+					{prop:'firstName',		label:'Sort by First Name'},
+					{prop:'kind',	label:'Sort by Kind'}
+				];
+				$scope.sortDirs = [					// Sort directions
+					{rev:false,	label:'Forwards'},
+					{rev:true,	label:'Backwards'}
+				];
+							
+				function getPosts() {								
+					$http.get('/contacts').then(function(response) {
+						$scope.contacts = response.data;
+					});
+				}
+
+				getPosts();											
+		
+				$scope.loadContact = function(contact) {					
+					var modalInstance = $uibModal.open({
+						templateUrl: 'contact.html',
+						controller: 'contactCtrl',
+						resolve: {
+							contactItem: function() {return contact;}
+						}
+					});
+					modalInstance.result.then(function() {
+						getPosts();
+					});			
+				};
+
+				
+			});
+
+			app.controller('contactCtrl', function($scope,$uibModal,$uibModalInstance,$http,contactItem){
+				console.log('contactCtrl contactItem=', contactItem);
+				$scope.contact = contactItem;
+
+				$scope.save = function() {
+					$http.post('/contacts', $scope.contact).then(function(response) {		
+						console.log('contact /contacts: ', response.data);
+						$uibModalInstance.close();
+					});
+				};
+
+				$scope.cancel = function() {
+						$uibModalInstance.dismiss();
+				};
+
+				$scope.delete = function() {
+						var deleteModalInstance = $uibModal.open({					// We create a new modal to confirm if the user really wants to delete
+							templateUrl: 'confirm.html',
+							controller: function($scope,$uibModalInstance) {
+								$scope.yes = function() {
+									$uibModalInstance.close();						// We resolve the promise
+								};
+								$scope.no = function() {
+									$uibModalInstance.dismiss();					// We reject the promise
+								};
+							}
+						});
+
+						deleteModalInstance.result.then(function() {				// We only delete if the result promise is resolved, meaning the user clicked yes
+							$http.delete('/contacts/' + $scope.contact._id).then(function() {
+								$uibModalInstance.close();
+							});
+						});
+				};
+				$http.get('/kinds').then(function(res) {		
+					$scope.kinds = res.data;
+				});
+			});
+
+		</script>
+	</head>
+	<body ng-app="crud">
+		<div class="container" ng-controller="contactList">
+
+			<div class="page-header">
+				<h1>Contacts</h1>
+			</div>
+
+				<div class="panel-heading">
+					<div class="col-md-6">
+						<h3 class="panel-title">
+							Add Contact
+						<th class="text-right">
+							<a href ng-click="loadContact()"><span class="glyphicon glyphicon-plus"></span></a>		
+						</th>
+						<br></br>
+						
+						
+	                        <labe>Search: </label>
+	                        <input class="form-control" ng-model="searchText">
+	                    
+						<br></br>
+
+						<p>
+							<select ng-model="sortProp"     ng-options="o.prop as o.label for o in sortProps"></select>
+							<select ng-model="sortReverse"  ng-options="o.rev  as o.label for o in sortDirs"></select>
+						</p>
+
+	                    </h3>
+	            	</div>
+				</div>
+
+				<div class="panel-body">
+					<div class="row">
+						<div class="col-sm-6">
+							<div class="panel panel-default" ng-repeat="contact in contacts | filter:searchText | orderBy:sortProp:sortReverse" >
+							  	<div class="panel-heading">
+								  	{{contact.firstName}} {{contact.lastName}}
+								  
+								<span class="text-right glyphicon glyphicon-pencil" ng-click="loadContact(contact)" aria-hidden="true"></span>
+								<span class="badge">{{contact.kind.name}}</span>
+							  	</div>
+								<div class="panel-body">
+								  	<p style="white-space: pre-line">
+								  	Phone: {{contact.phoneNum}}</p>
+								  	<p style="white-space: pre-line">
+								  	Email: {{contact.email}}</p>
+								  	<p style="white-space: pre-line">
+								  	Address: {{contact.address}}</p>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+		</div>
+	</body>
+</html>
