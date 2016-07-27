@@ -2,15 +2,16 @@ var express = require('express');
 var bodyParser = require('body-parser');
 var mongoose = require('mongoose');
 
-mongoose.connect('mongodb://localhost/contactList');		
+mongoose.connect('mongodb://okcoders:okcoders@okcoders.co/grant');		
 mongoose.Promise = Promise;								
 
 var app = express();
 app.use(bodyParser());									
 app.use(express.static('./public'));					
 
+var port = process.env.PORT || 8080;
 app.listen(8080, function() {
-	console.log('Listening at http://localhost:8080');
+	console.log('Listening at http://localhost:'+port);
 });
 
 var Contact = require('./models/contact');						
