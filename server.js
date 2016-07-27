@@ -10,7 +10,7 @@ app.use(bodyParser());
 app.use(express.static('./public'));					
 
 var port = process.env.PORT || 8080;
-app.listen(8080, function() {
+app.listen(port, function() {
 	console.log('Listening at http://localhost:'+port);
 });
 
